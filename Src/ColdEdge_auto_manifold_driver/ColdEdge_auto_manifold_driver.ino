@@ -1,49 +1,9 @@
-//Version History
-//v0.95-v0.99 JCP 10/31/18 Build and debug at ColdEdge
-//v0.20-v0.94 JCP 11/12/18 Removed old comments
-//vx.01 JCP 11/12/18 Trace pushbuttons, check timing on service loop
-//                   - Move routines used by setup to the top
-//                   - Remove charge ModeToggle routine
-//vx.02 JCP 11/12/18 Set fuse bits since we do not have a bootloader
-//                   - Extended: FB  High: D8  Low: FF
-//                   - Service loop cycles in 150 ms
-//vx.03 JCP 11/12/18 Change recirculator Open V7 and V2 to Open V7, V3 and V4
-//v1.14 JCP 11/13/18 Use custom version of pins_arduino.h
-//                   Initialize the pushbuttons last value
-//v1.15 JCP 11/14/18 Check all pushbuttons and LEDs
-//v1.16 JCP 11/14/18 Restore baseline image, check Ev, Pu, Ch valves
-//                   Move ResetPins() to end and comment out, not used
-//                   Cleanup buttonDebounce
-//v1.17 JCP 11/14/18 Build, test, ship to ColdEdge
-//v1.18 JCP 11/15/18 Change Charge function: Open V2, V7 --> Rr On, Open V7, V3, V4
-//v1.19 JCP 11/15/18 Ship to ColdEdge
-//v1.20 JCP 11/21/18 Change Charge function: Only close V3 and V7 when button is released
-//v1.20 JCP 11/21/18 Ship to ColdEdge
-//v1.21-1.25 not used
-//v1.26 JCP 11/25/18 Remove commented out code
-//                   Fix time display
-//                   Remove extra "+"
-//v1.27 JCP 11/25/18 Modify Toggle recirculate button operation
-//v1.28 JCP 11/26/18 Add countdown timer display to Recirc Toggle
-//v1.29 JCP 11/26/18 Display hr:min:sec, if > 10 hrs, only display Hr:min
-//v1.30 JCP 11/30/18 Overnight test
-//v1.31 JCP 12/1/18  Address Eric's concerns in "LabView Detail Review
-//                   - Reworked some of the Ard/LV button toggle logic
-//                   - Remove LabView commands from messages "Please..."
-//                   - Rework Charge for LabView control
-//v1.32 JCP 12/1/18  Ship to ColdEdge
-//v1.33 JCP 12/3/18  Ship to ColdEdge
-//v1.34 JCP 12/3/18  Ship to ColdEdge
-//v1.35 JCP 12/3/18  Ship to Coldedge
-//
-//
-
-
 #include <Wire.h>
+#include <EEPROM.h>
+#include <scpiparser.h>
 //#include <LCD.h>
 #include <LiquidCrystal_I2C.h>
 //#include <LiquidCrystal.h>
-#include <EEPROM.h>
 
 //setup buttons  pin, previous value, toggle status, set flag
 int but1p49[4] = {49, 0, 0, 0}; // Pin 49 evacuate mode - PL0/35
@@ -2548,4 +2508,3 @@ void AutoCharge() {
   digitalWrite(v7, LOW); // Valve 7
   digitalWrite(v3, LOW); // Valve 3
 }
-

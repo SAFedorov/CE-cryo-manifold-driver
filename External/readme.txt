@@ -1,0 +1,1 @@
+These folders should be copied to Documents\Arduino\libraries in orderto be included in compilation

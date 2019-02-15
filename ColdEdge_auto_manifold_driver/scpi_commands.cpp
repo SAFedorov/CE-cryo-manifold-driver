@@ -1,3 +1,4 @@
+
 #include <scpiparser.h>
 #include <Arduino.h>
 
@@ -8,7 +9,7 @@ void define_commands(struct scpi_parser_context* ctx){
 	struct scpi_command* measure;
 
 	/* First, initialise the parser. */
-	scpi_init(&ctx);
+	scpi_init(ctx);
 
 	/*
 	* After initialising the parser, we set up the command tree. 
@@ -19,13 +20,13 @@ void define_commands(struct scpi_parser_context* ctx){
 	*  :COOLer			-> Cryocooler on/off
 	*  :PRESSure?		-> 
 	*/
-	scpi_register_command(ctx.command_tree, SCPI_CL_SAMELEVEL, "*IDN?", 5, "*IDN?", 5, identify);
+	scpi_register_command(ctx->command_tree, SCPI_CL_SAMELEVEL, "*IDN?", 5, "*IDN?", 5, NULL);
   
-	scpi_register_command(ctx.command_tree, SCPI_CL_SAMELEVEL, "RECIRCULATOR?", 13, "RECI?", 5, get_valve_status);
-	scpi_register_command(ctx.command_tree, SCPI_CL_SAMELEVEL, "RECIRCULATOR", 12, "RECI", 4, NULL);
+	scpi_register_command(ctx->command_tree, SCPI_CL_SAMELEVEL, "RECIRCULATOR?", 13, "RECI?", 5, NULL);
+	scpi_register_command(ctx->command_tree, SCPI_CL_SAMELEVEL, "RECIRCULATOR", 12, "RECI", 4, NULL);
   
-	scpi_register_command(ctx.command_tree, SCPI_CL_SAMELEVEL, "COOLER?", 7, "COOL?", 5, NULL);
-	scpi_register_command(ctx.command_tree, SCPI_CL_SAMELEVEL, "COOLER", 6, "COOL", 4, NULL);
+	scpi_register_command(ctx->command_tree, SCPI_CL_SAMELEVEL, "COOLER?", 7, "COOL?", 5, NULL);
+	scpi_register_command(ctx->command_tree, SCPI_CL_SAMELEVEL, "COOLER", 6, "COOL", 4, NULL);
 }
 
 
@@ -43,10 +44,3 @@ scpi_error_t identify(struct scpi_parser_context* context, struct scpi_token* co
  * Respond to a valve status request :VALVE<n>?
  * valve_n is the position in valvestatus array
  */
-scpi_error_t get_valve_status(struct scpi_parser_context* context, struct scpi_token* command, int valve_n)
-{
-  scpi_free_tokens(command);
-
-  Serial1.println(String(valvestatus[valve_n]));
-  return SCPI_SUCCESS;
-}

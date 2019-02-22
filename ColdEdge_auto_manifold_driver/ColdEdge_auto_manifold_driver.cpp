@@ -1,9 +1,39 @@
+/*Begining of Auto generated code by Atmel studio */
+#include <Arduino.h>
+
 #include <Wire.h>
 #include <EEPROM.h>
-#include <scpiparser.h>
+//#include <scpiparser.h>
 //#include <LCD.h>
 #include <LiquidCrystal_I2C.h>
 //#include <LiquidCrystal.h>
+
+//Beginning of Auto generated function prototypes by Atmel Studio
+void startDisplay();
+void coldedgeDisplay();
+void valveDisplay(String SendSystemStatus);
+void buttonSensing();
+boolean butDebounce(int pinNum, int& Lst, int& Bst, int& Bset);
+void valvetoggle(int vnum, bool state);
+void toggleRecirculator();
+void closeAllValves();
+void m1evacMan();
+void m1evacAuto();
+void m2purgeMan();
+void m2purgeAuto();
+void m3startCool();
+void m3stopCool();
+void m1evacManIndefinite();
+void elapsedtimeDisplay(long etime);
+void pressureDisplay();
+void timeDisplay();
+void tAdjust();
+void EncoderState(int& rotate);
+int ReadEncoder();
+static void CheckLVtoggle(String SendRoutine);
+void chargeDisplay();
+void AutoCharge();
+//End of Auto generated function prototypes by Atmel Studio
 
 //setup buttons  pin, previous value, toggle status, set flag
 int but1p49[4] = {49, 0, 0, 0}; // Pin 49 evacuate mode - PL0/35

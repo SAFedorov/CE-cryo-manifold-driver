@@ -5,9 +5,6 @@
 /*Initialization of SCPI commands and definitions of callbacks*/
 
 void define_commands(struct scpi_parser_context* ctx){
-	struct scpi_command* source;
-	struct scpi_command* measure;
-
 	/* First, initialise the parser. */
 	scpi_init(ctx);
 

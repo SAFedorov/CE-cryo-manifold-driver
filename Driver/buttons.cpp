@@ -52,19 +52,9 @@ register_button(struct ce_button_list* btn_list, int pin, button_callback_t call
 		btn_list->tail = btn_list->tail->next;
 	}
 	
-	return new_button;
-}
+	pinMode(pin, INPUT_PULLUP);	
 
-void
-init_buttons(struct ce_button_list* btn_list)
-{
-	struct ce_button* current_button;
-	
-	current_button = btn_list->head;
-	while(current_button != NULL)
-	{
-		pinMode(current_button->pin, INPUT_PULLUP);
-	}
+	return new_button;
 }
 
 

@@ -40,13 +40,6 @@ void
 execute_buttons(struct ce_button_list* button_list);
 
 
-/**
- * Configure buttons as input.
- */
-void
-init_buttons(struct ce_button_list* btn_list);
-
-
 #ifdef __cplusplus
 
 }

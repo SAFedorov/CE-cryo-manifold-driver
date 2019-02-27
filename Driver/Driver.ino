@@ -1,32 +1,14 @@
 #include "buttons.h"
+#include "pins.h"
+#include "scpi_callbacks.h"
 #include <Arduino.h>
 #include <scpiparser.h>
-
-
-/* Valve pins */
-#define VALVE1_PIN  32
-#define VALVE2_PIN  33
-#define VALVE3_PIN  34
-#define VALVE4_PIN  35
-#define VALVE5_PIN  36
-// VALVE6_PIN - 37, valve 6 is not used 
-#define VALVE7_PIN  38
-
-/* LED pins */
-#define LED1_PIN    39
-#define LED2_PIN    40
-
-/* Other pins */
-#define RECIRC_PIN  28
-#define COOLER_PIN  29
-#define PRESS_PIN   0   // analog pin for reading pressure ADC0/78
 
 /* Serial port configuration */
 #define COM_TERMINATOR  '\n'
 #define COM_BAUD_RATE   9600
 #define COM_BUFF_SIZE   256
 #define COM_TIMEOUT     50 // ms
-
 
 
 /* Global variables */
@@ -89,7 +71,7 @@ void setup() {
   scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "COOLER?", 7, "COOL?", 5, NULL);
   scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "COOLER", 6, "COOL", 4, NULL);
 
-  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "PRESSURE?", 9, "PRES?", 5, NULL);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "PRESSURE?", 9, "PRES?", 5, &get_pressure);
   
 
   /* Start serial communication */
@@ -171,13 +153,24 @@ void toggle_pin(int pin)
   }
 }
 
+/*
+ * Read pressure in PSI
+ */
+double read_pressure()
+{
+  double p;
+  p = analogRead(PRESS_PIN) / 1024.0; //get value relative to full range
+  p = p * 200;  //convert to psi
+  return p;
+}
+
+
 /* Callbacks */
 
 /*
  * Set all outputs to 'off' state
  */
-void
-set_all_off()
+void set_all_off()
 {
   digitalWrite(VALVE1_PIN, LOW);  
   digitalWrite(VALVE2_PIN, LOW);  
@@ -219,66 +212,4 @@ void toggle_recirculator(struct ce_button* btn){
 
 void toggle_cryocooler(struct ce_button* btn){
   toggle_pin(COOLER_PIN);
-}
-
-/*
- * Respond to *IDN?
- */
-struct scpi_response* 
-identify(struct scpi_parser_context* context, struct scpi_token* command)
-{
-  struct scpi_response* resp;
-  
-  scpi_free_tokens(command);
-
-  resp = get_empty_response(20);
-  strcpy(resp->str, "CE Cryo driver v0.1");
-  resp->length--; // discard the EOS character
-  
-  return resp;
-}
-
-/*
- * Get status
- */
-
-struct scpi_response* 
-get_pin_stat(int pin)
-{
-  struct scpi_response* resp;
-  int stat;
-  stat = digitalRead(pin);
-  resp = get_empty_response(2);
-  resp->length = sprintf(resp->str, "%i", stat);
-  return resp;
-}
-
-struct scpi_response* get_valve1(struct scpi_parser_context* context, struct scpi_token* command){
-  scpi_free_tokens(command);
-  return get_pin_stat(VALVE1_PIN);
-}
-
-struct scpi_response* get_valve2(struct scpi_parser_context* context, struct scpi_token* command){
-  scpi_free_tokens(command);
-  return get_pin_stat(VALVE2_PIN);
-}
-
-struct scpi_response* get_valve3(struct scpi_parser_context* context, struct scpi_token* command){
-  scpi_free_tokens(command);
-  return get_pin_stat(VALVE3_PIN);
-}
-
-struct scpi_response* get_valve4(struct scpi_parser_context* context, struct scpi_token* command){
-  scpi_free_tokens(command);
-  return get_pin_stat(VALVE4_PIN);
-}
-
-struct scpi_response* get_valve5(struct scpi_parser_context* context, struct scpi_token* command){
-  scpi_free_tokens(command);
-  return get_pin_stat(VALVE5_PIN);
-}
-
-struct scpi_response* get_valve7(struct scpi_parser_context* context, struct scpi_token* command){
-  scpi_free_tokens(command);
-  return get_pin_stat(VALVE7_PIN);
 }

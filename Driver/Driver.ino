@@ -1,5 +1,6 @@
 #include "buttons.h"
 #include <Arduino.h>
+#include <scpiparser.h>
 
 
 /* Valve pins */
@@ -30,6 +31,7 @@
 
 /* Global variables */
 struct ce_button_list btn_list;
+struct scpi_parser_context ctx;
 
 void setup() {
   
@@ -46,6 +48,7 @@ void setup() {
 
   set_all_off();
 
+  /* Configure buttons */
   btn_list.head = NULL;
   register_button(&btn_list, 45, &toggle_valve1);       // valve 1 open/close
   register_button(&btn_list, 49, &toggle_valve23);      // valve 2 and 3 open/close
@@ -56,7 +59,38 @@ void setup() {
   register_button(&btn_list, 47, &toggle_recirculator); // recirculator on/off
   register_button(&btn_list, 46, &toggle_cryocooler);   // cryocooler on/off
 
-  register_button(&btn_list, 6, &set_all_off);    // all off
+  register_button(&btn_list, 6, &set_all_off);          // all off
+
+
+  /* Register scpi commands */
+  /* First, initialise the parser. */
+  scpi_init(&ctx);
+
+  /*
+  * Set up the command tree. Since there are few commands 
+  * 
+  *  *IDN?          -> Identify
+  *  :VALVE<i>      -> Valve<i> open/closed
+  *  :RECirculator  -> Recirculator on/off
+  *  :COOLer        -> Cryocooler on/off
+  *  :PRESsure?     -> read pressure
+  */
+  scpi_register_command(ctx.command_tree, SCPI_CL_SAMELEVEL, "*IDN?", 5, "*IDN?", 5, &identify);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE1?", 7, "VALVE1?", 7, &get_valve1);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE2?", 7, "VALVE2?", 7, &get_valve2);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE3?", 7, "VALVE3?", 7, &get_valve3);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE4?", 7, "VALVE4?", 7, &get_valve4);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE5?", 7, "VALVE5?", 7, &get_valve5);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE7?", 7, "VALVE7?", 7, &get_valve7);
+  
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "RECIRCULATOR?", 13, "REC?", 4, NULL);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "RECIRCULATOR", 12, "REC", 3, NULL);
+  
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "COOLER?", 7, "COOL?", 5, NULL);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "COOLER", 6, "COOL", 4, NULL);
+
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "PRESSURE?", 9, "PRES?", 5, NULL);
+  
 
   /* Start serial communication */
   Serial1.setTimeout(COM_TIMEOUT);
@@ -68,10 +102,57 @@ void setup() {
  * Main function that is executed continuously
  */
 void loop() {
+  char line_buffer[COM_BUFF_SIZE];
+  unsigned char read_length;
+  struct scpi_response* response;
+  struct scpi_response* tmp_response;
+
+  int resp_cnt;
+  
   while(1)
   {
+    /* Execute button callbacks */
     execute_buttons(&btn_list);
-    //processComm();
+
+    /* Execute commands received from the serial port */
+    read_length = Serial1.readBytesUntil(COM_TERMINATOR, line_buffer, COM_BUFF_SIZE);
+    if(read_length > 0)
+    {
+      response = scpi_execute(&ctx, line_buffer, read_length);
+
+      /* Count non-empty responses and send reply if cnt>0*/
+      tmp_response = response;
+      resp_cnt=0;
+      while(tmp_response != NULL)
+      {
+        if(tmp_response->length>0)
+        {
+          resp_cnt++;
+        }
+        tmp_response = tmp_response->next;
+      }
+
+      if(resp_cnt>0)
+      {
+        /* Print response strings to the serial port*/
+        tmp_response = response;
+        while(tmp_response != NULL)
+        {
+          Serial1.write((const uint8_t*)tmp_response->str, tmp_response->length);
+          if(tmp_response->next != NULL)
+          {
+            Serial1.print(';');
+          }
+          else
+          {
+            Serial1.print(COM_TERMINATOR);
+          }
+          tmp_response = tmp_response->next;
+        }
+      }
+      
+      scpi_free_responses(response);
+    }
   }
 }
 
@@ -138,4 +219,66 @@ void toggle_recirculator(struct ce_button* btn){
 
 void toggle_cryocooler(struct ce_button* btn){
   toggle_pin(COOLER_PIN);
+}
+
+/*
+ * Respond to *IDN?
+ */
+struct scpi_response* 
+identify(struct scpi_parser_context* context, struct scpi_token* command)
+{
+  struct scpi_response* resp;
+  
+  scpi_free_tokens(command);
+
+  resp = get_empty_response(20);
+  strcpy(resp->str, "CE Cryo driver v0.1");
+  resp->length--; // discard the EOS character
+  
+  return resp;
+}
+
+/*
+ * Get status
+ */
+
+struct scpi_response* 
+get_pin_stat(int pin)
+{
+  struct scpi_response* resp;
+  int stat;
+  stat = digitalRead(pin);
+  resp = get_empty_response(2);
+  resp->length = sprintf(resp->str, "%i", stat);
+  return resp;
+}
+
+struct scpi_response* get_valve1(struct scpi_parser_context* context, struct scpi_token* command){
+  scpi_free_tokens(command);
+  return get_pin_stat(VALVE1_PIN);
+}
+
+struct scpi_response* get_valve2(struct scpi_parser_context* context, struct scpi_token* command){
+  scpi_free_tokens(command);
+  return get_pin_stat(VALVE2_PIN);
+}
+
+struct scpi_response* get_valve3(struct scpi_parser_context* context, struct scpi_token* command){
+  scpi_free_tokens(command);
+  return get_pin_stat(VALVE3_PIN);
+}
+
+struct scpi_response* get_valve4(struct scpi_parser_context* context, struct scpi_token* command){
+  scpi_free_tokens(command);
+  return get_pin_stat(VALVE4_PIN);
+}
+
+struct scpi_response* get_valve5(struct scpi_parser_context* context, struct scpi_token* command){
+  scpi_free_tokens(command);
+  return get_pin_stat(VALVE5_PIN);
+}
+
+struct scpi_response* get_valve7(struct scpi_parser_context* context, struct scpi_token* command){
+  scpi_free_tokens(command);
+  return get_pin_stat(VALVE7_PIN);
 }

@@ -1,11 +1,6 @@
 ﻿#include <Arduino.h>
 #include "buttons.h"
 
-#ifdef __cplusplus
-
-extern "C" {
-	
-#endif
 
 void
 execute_buttons(struct ce_button_list* btn_list)
@@ -57,9 +52,3 @@ register_button(struct ce_button_list* btn_list, int pin, button_callback_t call
 	return new_button;
 }
 
-
-#ifdef __cplusplus
-
-}
-
-#endif

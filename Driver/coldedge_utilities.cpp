@@ -22,3 +22,16 @@ double read_pressure()
   p = p * 200;  //convert to psi
   return p;
 }
+
+
+void set_all_off()
+{
+  digitalWrite(VALVE1_PIN, LOW);  
+  digitalWrite(VALVE2_PIN, LOW);  
+  digitalWrite(VALVE3_PIN, LOW);  
+  digitalWrite(VALVE4_PIN, LOW);  
+  digitalWrite(VALVE5_PIN, LOW);  
+  digitalWrite(VALVE7_PIN, LOW);  
+  digitalWrite(RECIRC_PIN, LOW);  
+  digitalWrite(COOLER_PIN, LOW);  
+}

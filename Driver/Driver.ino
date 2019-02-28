@@ -58,18 +58,25 @@ void setup() {
   *  :PRESsure?     -> read pressure
   */
   scpi_register_command(ctx.command_tree, SCPI_CL_SAMELEVEL, "*IDN?", 5, "*IDN?", 5, &identify);
-  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE1?", 7, "VALVE1?", 7, &get_valve1);
-  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE2?", 7, "VALVE2?", 7, &get_valve2);
-  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE3?", 7, "VALVE3?", 7, &get_valve3);
-  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE4?", 7, "VALVE4?", 7, &get_valve4);
-  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE5?", 7, "VALVE5?", 7, &get_valve5);
-  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE7?", 7, "VALVE7?", 7, &get_valve7);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE1?", 7, "V1?", 3, &get_valve1);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE2?", 7, "V2?", 3, &get_valve2);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE3?", 7, "V3?", 3, &get_valve3);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE4?", 7, "V4?", 3, &get_valve4);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE5?", 7, "V5?", 3, &get_valve5);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE7?", 7, "V7?", 3, &get_valve7);
+
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE1", 6, "V1", 2, &set_valve1);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE2", 6, "V2", 2, &set_valve2);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE3", 6, "V3", 2, &set_valve3);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE4", 6, "V4", 2, &set_valve4);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE5", 6, "V5", 2, &set_valve5);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "VALVE7", 6, "V7", 2, &set_valve7);
   
-  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "RECIRCULATOR?", 13, "REC?", 4, NULL);
-  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "RECIRCULATOR", 12, "REC", 3, NULL);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "RECIRCULATOR?", 13, "REC?", 4, &get_recirculator);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "RECIRCULATOR", 12, "REC", 3, &set_recirculator);
   
-  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "COOLER?", 7, "COOL?", 5, NULL);
-  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "COOLER", 6, "COOL", 4, NULL);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "COOLER?", 7, "COOL?", 5, &get_cryocooler);
+  scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "COOLER", 6, "COOL", 4, &set_cryocooler);
 
   scpi_register_command(ctx.command_tree, SCPI_CL_CHILD, "PRESSURE?", 9, "PRES?", 5, &get_pressure);
   
@@ -138,51 +145,36 @@ void loop() {
   }
 }
 
-/* Callbacks */
-
-/*
- * Set all outputs to 'off' state
- */
-void set_all_off()
-{
-  digitalWrite(VALVE1_PIN, LOW);  
-  digitalWrite(VALVE2_PIN, LOW);  
-  digitalWrite(VALVE3_PIN, LOW);  
-  digitalWrite(VALVE4_PIN, LOW);  
-  digitalWrite(VALVE5_PIN, LOW);  
-  digitalWrite(VALVE7_PIN, LOW);  
-  digitalWrite(RECIRC_PIN, LOW);  
-  digitalWrite(COOLER_PIN, LOW);  
-}
+/* Button callbacks */
 
 /*
  * Toggle valves
  */
-void toggle_valve1(struct ce_button* btn){
+void toggle_valve1(){
   toggle_pin(VALVE1_PIN);
 }
 
-void toggle_valve23(struct ce_button* btn){
+void toggle_valve23(){
   toggle_pin(VALVE2_PIN);
   toggle_pin(VALVE3_PIN);
 }
 
-void toggle_valve4(struct ce_button* btn){
+void toggle_valve4(){
   toggle_pin(VALVE4_PIN);
 }
 
-void toggle_valve5(struct ce_button* btn){
+void toggle_valve5(){
   toggle_pin(VALVE5_PIN);
 }
 
-void toggle_valve7(struct ce_button* btn){
+void toggle_valve7(){
   toggle_pin(VALVE7_PIN);
 }
 
-void toggle_recirculator(struct ce_button* btn){
+void toggle_recirculator(){
   toggle_pin(RECIRC_PIN);
 }
 
-void toggle_cryocooler(struct ce_button* btn){
+void toggle_cryocooler(){
   toggle_pin(COOLER_PIN);
 }

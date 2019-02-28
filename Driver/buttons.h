@@ -7,7 +7,7 @@ extern "C" {
 #endif
 
 
-typedef void(*button_callback_t)(struct ce_button*);
+typedef void(*button_callback_t)(void);
 
 struct ce_button
 {

@@ -23,7 +23,7 @@ execute_buttons(struct ce_button_list* btn_list)
 		if(current_button->current_state == 1 && current_button->previous_state == 0 
 			&& current_button->callback != NULL)
 		{
-			current_button->callback(current_button);
+			current_button->callback();
 		}
 		
 		current_button = current_button->next;

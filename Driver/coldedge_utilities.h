@@ -26,6 +26,12 @@ void toggle_pin(int pin);
 
 
 /*
- * Read pressure in PSI
+ * Read supply pressure in PSI
  */
 double read_pressure();
+
+
+/*
+ * Set all outputs to 'off' state
+ */
+void set_all_off();

@@ -93,10 +93,6 @@ void setup() {
 void loop() {
   char line_buffer[COM_BUFF_SIZE];
   unsigned char read_length;
-  struct scpi_response* response;
-  struct scpi_response* tmp_response;
-
-  int resp_cnt;
   
   while(1)
   {
@@ -105,44 +101,17 @@ void loop() {
 
     /* Execute commands received from the serial port */
     read_length = Serial1.readBytesUntil(COM_TERMINATOR, line_buffer, COM_BUFF_SIZE);
-    if(read_length > 0)
-    {
-      response = scpi_execute(&ctx, line_buffer, read_length);
-
-      /* Count non-empty responses and send reply if cnt>0*/
-      tmp_response = response;
-      resp_cnt=0;
-      while(tmp_response != NULL)
-      {
-        if(tmp_response->length>0)
-        {
-          resp_cnt++;
-        }
-        tmp_response = tmp_response->next;
-      }
-
-      if(resp_cnt>0)
-      {
-        /* Print response strings to the serial port*/
-        tmp_response = response;
-        while(tmp_response != NULL)
-        {
-          Serial1.write((const uint8_t*)tmp_response->str, tmp_response->length);
-          if(tmp_response->next != NULL)
-          {
-            Serial1.print(';');
-          }
-          else
-          {
-            Serial1.print(COM_TERMINATOR);
-          }
-          tmp_response = tmp_response->next;
-        }
-      }
-      
-      scpi_free_responses(response);
-    }
+    scpi_execute(&ctx, line_buffer, read_length, &commf, COM_TERMINATOR);
   }
+}
+
+/*
+ * Communicate using serial port
+ */
+void
+commf(char* str, int length)
+{
+  Serial1.write((const uint8_t*)str, length);
 }
 
 /* Button callbacks */

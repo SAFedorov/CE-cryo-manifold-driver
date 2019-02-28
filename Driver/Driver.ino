@@ -1,5 +1,5 @@
 #include "buttons.h"
-#include "pins.h"
+#include "coldedge_utilities.h"
 #include "scpi_callbacks.h"
 #include <Arduino.h>
 #include <scpiparser.h>
@@ -137,33 +137,6 @@ void loop() {
     }
   }
 }
-
-/*
- * Toggle output pin state between HIGH and LOW
- */
-void toggle_pin(int pin)
-{
-  if(digitalRead(pin))
-  {
-    digitalWrite(pin, LOW);
-  }
-  else
-  {
-    digitalWrite(pin, HIGH);
-  }
-}
-
-/*
- * Read pressure in PSI
- */
-double read_pressure()
-{
-  double p;
-  p = analogRead(PRESS_PIN) / 1024.0; //get value relative to full range
-  p = p * 200;  //convert to psi
-  return p;
-}
-
 
 /* Callbacks */
 

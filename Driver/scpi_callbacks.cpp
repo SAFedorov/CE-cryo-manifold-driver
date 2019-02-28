@@ -1,4 +1,4 @@
-#include "pins.h"
+#include "coldedge_utilities.h"
 #include <Arduino.h>
 #include <scpiparser.h>
 
@@ -84,10 +84,10 @@ get_pressure(struct scpi_parser_context* context, struct scpi_token* command)
 
 	scpi_free_tokens(command);
 
-	p = analogRead(PRESS_PIN) / 1024.0; //get value relative to full range
-	p = p * 200;  //convert to psi
+	p = read_pressure();
 
 	resp = get_empty_response(10);
-	resp->length = sprintf(resp->str, "%i", p);
+	dtostrf(p, 6, 2, resp);
+	resp->length = 6;
 	return resp;
 }

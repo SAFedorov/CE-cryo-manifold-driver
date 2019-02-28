@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 /* Valve pins */
 #define VALVE1_PIN  32
 #define VALVE2_PIN  33
@@ -15,3 +17,15 @@
 #define RECIRC_PIN  28
 #define COOLER_PIN  29
 #define PRESS_PIN   0   // analog pin for reading pressure ADC0/78
+
+
+/*
+ * Toggle output pin state between HIGH and LOW
+ */
+void toggle_pin(int pin);
+
+
+/*
+ * Read pressure in PSI
+ */
+double read_pressure();

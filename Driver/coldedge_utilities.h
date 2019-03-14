@@ -1,4 +1,20 @@
 #include <Arduino.h>
+#include <LiquidCrystal_I2C.h> // newliquidcrystal 
+
+/* LCD parameters */
+#define I2C_ADDR	0x27  // Define I2C Address where the SainSmart LCD is 3f
+#define LCD_WIDTH	20
+#define LCD_HIGHT	4
+
+/* LCD pins */
+#define BACKLIGHT_PIN   3
+#define EN_PIN			2
+#define RW_PIN			1
+#define RS_PIN			0
+#define D4_PIN			4
+#define D5_PIN			5
+#define D6_PIN			6
+#define D7_PIN			7
 
 /* Valve pins */
 #define VALVE1_PIN  32
@@ -35,3 +51,16 @@ double read_pressure();
  * Set all outputs to 'off' state
  */
 void set_all_off();
+
+
+/*
+ * Display pressure in PSI on the screen
+ */
+void display_pressure(LiquidCrystal_I2C lcd);
+
+
+/*
+ * Display startup screen
+ */
+void display_startup(LiquidCrystal_I2C lcd);
+

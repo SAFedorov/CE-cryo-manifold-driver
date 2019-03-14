@@ -1,8 +1,9 @@
+#include <Arduino.h>
+#include <scpiparser.h>
+#include <LiquidCrystal_I2C.h> // newliquidcrystal 
 #include "buttons.h"
 #include "coldedge_utilities.h"
 #include "scpi_callbacks.h"
-#include <Arduino.h>
-#include <scpiparser.h>
 
 /* Serial port configuration */
 #define COM_TERMINATOR  '\n'
@@ -15,6 +16,12 @@
 struct ce_button_list btn_list;
 struct scpi_parser_context ctx;
 
+LiquidCrystal_I2C lcd(I2C_ADDR, EN_PIN, RW_PIN, RS_PIN, D4_PIN, D5_PIN, D6_PIN, D7_PIN);
+
+
+/*
+ * Setup function which is executed once on startup
+ */
 void setup() {
   
   analogReference(DEFAULT); // Set the top of the analog input range (5V)
@@ -43,9 +50,16 @@ void setup() {
 
   register_button(&btn_list, 6, &set_all_off);          // all off
 
+  /* Configure the LCD display */
+  lcd.begin(LCD_WIDTH, LCD_HIGHT);   // Set width and height
+  lcd.setBacklightPin(BACKLIGHT_PIN, POSITIVE); // Set backlight
+  lcd.setBacklight(HIGH);
+  
+  lcd.clear();
+  display_startup(lcd);
 
   /* Register scpi commands */
-  /* First, initialise the parser. */
+  /* First, initialise the parser */
   scpi_init(&ctx);
 
   /*
@@ -96,6 +110,9 @@ void loop() {
   
   while(1)
   {
+    lcd.clear();
+    display_pressure(lcd);
+    
     /* Execute button callbacks */
     execute_buttons(&btn_list);
 

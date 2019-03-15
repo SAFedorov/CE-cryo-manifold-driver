@@ -38,22 +38,28 @@ void set_all_off()
 }
 
 
-void display_pressure(LiquidCrystal_I2C lcd)
+void display_pressure(LiquidCrystal_I2C* lcd)
 {
 	double p;
+	char str[20];
 	
-	p = read_pressure();
-	
-	lcd.setCursor(10, 1);
-	lcd.print("Supply pressure: ");
-	lcd.setCursor(10, 17);
-	lcd.print(p);
-	lcd.print(" PSI");
+	p = read_pressure();	
+
+	lcd->setCursor(1, 1);	
+	lcd->print("Supply pressure: ");
+
+	lcd->setCursor(1, 2);
+	lcd->print(p);
+
+	/* Extra spaces at the end are needed to overwrite remaining symbols 
+	 * in the case if the new string is shorter than the old one 
+	 */
+	lcd->print(" PSI      "); 
 }
 
 
-void display_startup(LiquidCrystal_I2C lcd)
+void display_startup(LiquidCrystal_I2C* lcd)
 {
-	lcd.setCursor(3, 1); 
-	lcd.print("Starting..."); 
+	lcd->setCursor(3, 1); 
+	lcd->print("Starting..."); 
 }

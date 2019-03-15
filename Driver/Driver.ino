@@ -9,8 +9,10 @@
 #define COM_TERMINATOR  '\n'
 #define COM_BAUD_RATE   9600
 #define COM_BUFF_SIZE   256
-#define COM_TIMEOUT     50 // ms
+#define COM_TIMEOUT     50 // (ms), this also approximately sets the time to iterate over the main loop 
 
+/* LCD parameters*/
+#define LCD_UPDATE_TIME 300 // (ms)
 
 /* Global variables */
 struct ce_button_list btn_list;
@@ -23,9 +25,19 @@ LiquidCrystal_I2C lcd(I2C_ADDR, EN_PIN, RW_PIN, RS_PIN, D4_PIN, D5_PIN, D6_PIN, 
  * Setup function which is executed once on startup
  */
 void setup() {
-  
-  analogReference(DEFAULT); // Set the top of the analog input range (5V)
 
+  /* Configure the LCD display */
+  lcd.begin(LCD_WIDTH, LCD_HIGHT);   // Set width and height
+  lcd.setBacklightPin(BACKLIGHT_PIN, POSITIVE); // Set backlight
+  lcd.setBacklight(HIGH);
+  
+  lcd.clear();
+  display_startup(&lcd);
+
+  /* Set the top of the analog input range (5V) */
+  analogReference(DEFAULT);
+
+  /* Configure pins */
   pinMode(VALVE1_PIN, OUTPUT);
   pinMode(VALVE2_PIN, OUTPUT);
   pinMode(VALVE3_PIN, OUTPUT);
@@ -50,20 +62,12 @@ void setup() {
 
   register_button(&btn_list, 6, &set_all_off);          // all off
 
-  /* Configure the LCD display */
-  lcd.begin(LCD_WIDTH, LCD_HIGHT);   // Set width and height
-  lcd.setBacklightPin(BACKLIGHT_PIN, POSITIVE); // Set backlight
-  lcd.setBacklight(HIGH);
-  
-  lcd.clear();
-  display_startup(lcd);
-
   /* Register scpi commands */
-  /* First, initialise the parser */
+  /* Initialise the parser */
   scpi_init(&ctx);
 
   /*
-  * Set up the command tree. Since there are few commands 
+  * Set up the command tree. Since there are few commands, only use the root level 
   * 
   *  *IDN?          -> Identify
   *  :VALVE<i>      -> Valve<i> open/closed
@@ -107,11 +111,21 @@ void setup() {
 void loop() {
   char line_buffer[COM_BUFF_SIZE];
   unsigned char read_length;
-  
+  int lcd_upd_cnt;
+
+  lcd_upd_cnt = 0;
   while(1)
   {
-    lcd.clear();
-    display_pressure(lcd);
+    /* Update rate for the LCD is lower than the main loop rate for better readability */
+    if (lcd_upd_cnt >= LCD_UPDATE_TIME/COM_TIMEOUT)
+    {
+      display_pressure(&lcd);
+    }
+    else
+    {
+      lcd_upd_cnt++;
+    }
+      
     
     /* Execute button callbacks */
     execute_buttons(&btn_list);

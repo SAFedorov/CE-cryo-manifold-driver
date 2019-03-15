@@ -9,8 +9,8 @@ identify(struct scpi_parser_context* context, struct scpi_token* command)
 {
 	struct scpi_response* resp;
 
-	resp = get_empty_response(20);
-	strcpy(resp->str, "CE Cryo driver v0.1");
+	resp = get_empty_response(40);
+	resp->length = sprintf(resp->str, "%s", "EPFL driver for ColdEdge cryo v1.0");
 	resp->length--; // discard the EOS character
   
 	return resp;

@@ -56,11 +56,11 @@ void set_all_off();
 /*
  * Display pressure in PSI on the screen
  */
-void display_pressure(LiquidCrystal_I2C lcd);
+void display_pressure(LiquidCrystal_I2C* lcd);
 
 
 /*
  * Display startup screen
  */
-void display_startup(LiquidCrystal_I2C lcd);
+void display_startup(LiquidCrystal_I2C* lcd);
 

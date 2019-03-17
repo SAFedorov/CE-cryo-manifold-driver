@@ -1,5 +1,6 @@
 /*
 Copyright (c) 2013 Lachlan Gunn
+Copyright (c) 2019 Sergey Fedorov
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +27,6 @@ SOFTWARE.
 #include <ctype.h>
 
 #include <Arduino.h>
-//#include <WProgram.h>
 
 #include "scpiparser.h"
 
@@ -36,18 +36,43 @@ SOFTWARE.
   
 #endif
 
-static scpi_error_t
+/* Case-insensitive string comparison over defined length*/
+static int
+strcmpil(char* str1, char* str2, int length)
+{
+	int i;
+	int isequal;
+	
+	isequal = 1;
+	for(i=0; i<length; i++)
+	{
+		if(toupper(str1[i]) != toupper(str2[i]))
+		{
+			isequal = 0;
+			break;
+		}
+	}
+	
+	return isequal;
+}
+
+
+static struct scpi_response*
 system_error(struct scpi_parser_context* ctx, struct scpi_token* command)
 {
-	struct scpi_error* error = scpi_pop_error(ctx);
-	
-	Serial.print(error->id);
-        Serial.print(",\"");
-        Serial.write((const uint8_t*)error->description, error->length);
-	Serial.println("\"");
+	struct scpi_error* error;
+	struct scpi_response* response;
 
-	scpi_free_tokens(command);
-	return SCPI_SUCCESS;
+	response = get_empty_response(0);
+	response->error_code = SCPI_SUCCESS;
+
+	error = scpi_pop_error(ctx);
+	response->str = error->description;
+	response->length = error->length;
+
+	free((void*)error);
+
+	return response;
 }
 
 void
@@ -94,8 +119,10 @@ scpi_parse_string(char* str, size_t length)
 	
 	struct scpi_token* head;
 	struct scpi_token* tail;
+	struct scpi_token* new_tail;
 	
 	int token_start;
+	int token_length;
 	
 	head = NULL;
 	tail = NULL;
@@ -103,21 +130,24 @@ scpi_parse_string(char* str, size_t length)
 	
 	for(i = 0; i < length; i++)
 	{
-		
 		if(str[i] == ':' || str[i] == ' ' || i == length-1)
 		{
-			struct scpi_token* new_tail;
-			
-			new_tail = (struct scpi_token*)malloc(sizeof(struct scpi_token));
-			new_tail->type = 0;
-			new_tail->value = str+token_start;
-			new_tail->length = i-token_start;
-			new_tail->next = NULL;
-			
 			if(i == length-1)
 			{
-				new_tail->length++;
+				/*including the current character*/
+				token_length = i-token_start+1;
 			}
+			else
+			{
+				/*excluding the current character*/
+				token_length = i-token_start;
+			}
+			
+			new_tail = (struct scpi_token*)malloc(sizeof(struct scpi_token));
+			new_tail->type = SCPI_CT_NAME;
+			new_tail->value = str+token_start;
+			new_tail->length = token_length;
+			new_tail->next = NULL;
 						
 			if(tail == NULL)
 			{
@@ -148,9 +178,8 @@ scpi_parse_string(char* str, size_t length)
 		
 		if(str[i] == ',' || i == length-1)
 		{
-			struct scpi_token* new_tail;
 			new_tail = (struct scpi_token*)malloc(sizeof(*new_tail));
-			new_tail->type = 1;
+			new_tail->type = SCPI_CT_ARG;
 			new_tail->value = str+token_start;
 			new_tail->length = i-token_start;
 			new_tail->next = NULL;
@@ -231,7 +260,7 @@ scpi_find_command(struct scpi_parser_context* ctx,
 	current_command = root;
 
 	
-	while(current_token != NULL && current_token->type == 0)
+	while(current_token != NULL && current_token->type == SCPI_CT_NAME)
 	{
 	
 		int found_token = 0;
@@ -239,14 +268,14 @@ scpi_find_command(struct scpi_parser_context* ctx,
 		{
 			
 			if((current_token->length == current_command->long_name_length
-					&& !memcmp(current_token->value, current_command->long_name, current_token->length))
+					&& strcmpil(current_token->value, current_command->long_name, current_token->length))
 				|| (current_token->length == current_command->short_name_length
-					&& !memcmp(current_token->value, current_command->short_name, current_token->length)))
+					&& strcmpil(current_token->value, current_command->short_name, current_token->length)))
 			{
 				/* We have found the token. */
 				current_token = current_token->next;
 				
-				if(current_token == NULL || current_token->type != 0)
+				if(current_token == NULL || current_token->type != SCPI_CT_NAME)
 				{
 					return current_command;
 				}
@@ -272,27 +301,155 @@ scpi_find_command(struct scpi_parser_context* ctx,
 	return NULL;
 }
 
-scpi_error_t
+struct scpi_response*
+get_empty_response(int length)
+{
+	struct scpi_response* response;
+	
+	response = (struct scpi_response*)malloc(sizeof(struct scpi_response));
+	response->error_code = SCPI_SUCCESS;
+	response->next = NULL;
+	
+	if(length == 0)
+	{
+		response->str = NULL;
+		response->length = 0;	
+	}
+	else
+	{
+		response->str = (char *)malloc(length*sizeof(char));
+		response->length = length;
+	}
+	
+	return response;
+}
+
+struct scpi_response*
 scpi_execute_command(struct scpi_parser_context* ctx, char* command_string, size_t length)
 {
 	struct scpi_command* command;
 	struct scpi_token* parsed_command;
+	struct scpi_response* response;
 	
 	parsed_command = scpi_parse_string(command_string, length);
 	
 	command = scpi_find_command(ctx, parsed_command);
+	response = NULL;
 	if(command == NULL)
 	{
-		return SCPI_COMMAND_NOT_FOUND;
+		response = get_empty_response(0);
+		response->error_code = SCPI_COMMAND_NOT_FOUND;
 	}
-	
-	if(command->callback == NULL)
+	else if(command->callback == NULL)
 	{
-		return SCPI_NO_CALLBACK;
+		response = get_empty_response(0);
+		response->error_code = SCPI_NO_CALLBACK;
+	}
+	else
+	{
+		response = command->callback(ctx, parsed_command);	
 	}
 	
+	if(response == NULL)
+	{
+		response = get_empty_response(0);
+		response->error_code = SCPI_NO_CALLBACK_RESPONSE;
+	}
+
+	scpi_free_tokens(parsed_command);
 	
-	return command->callback(ctx, parsed_command);
+	return response;
+}
+
+void
+scpi_execute(struct scpi_parser_context* ctx, char* command_string, size_t length, commf_t commf, char terminator)
+{
+	int i;
+	int start_ind;
+	int cmd_length;
+	struct scpi_response* head;
+	struct scpi_response* tail;
+	struct scpi_response* current_response;
+
+	if(length <= 0)
+	{
+		return;
+	}
+
+	/* Split the command string by ';' and execute command callbacks */
+	head = NULL;
+	start_ind = 0;
+
+	for(i = 0; i < length; i++)
+	{
+		if(command_string[i] == ';' || i == length-1)
+		{
+			if(i == length-1 && command_string[i] != ';')
+			{
+				/*including the current character*/
+				cmd_length = i-start_ind+1;
+			}
+			else
+			{
+				/*excluding the current character, which is ';'*/
+				cmd_length = i-start_ind;
+			}
+			
+			current_response = scpi_execute_command(ctx, &command_string[start_ind], cmd_length);
+
+			if(head == NULL)
+			{
+				head = current_response;
+				tail = head;
+			}
+			else
+			{
+				tail->next = current_response;
+				tail = tail->next;
+			}
+			
+			tail->next=NULL;
+			start_ind = i+1;
+		}
+	}
+
+	/* Count non-empty responses and send reply if cnt>0 */
+	current_response = head;
+	i=0;
+
+	while(current_response != NULL)
+	{
+		if(current_response->length>0)
+		{
+			i++;
+		}
+		current_response = current_response->next;
+	}
+
+	if(i>0 && commf != NULL)
+	{
+		char cmd_sep = ';';
+
+		/* Communicate response strings */
+		current_response = head;
+		while(current_response != NULL)
+		{
+			commf(current_response->str, current_response->length);
+			if(current_response->next != NULL)
+			{
+				commf(&cmd_sep, 1);
+			}
+			else
+			{
+				commf(&terminator, 1);
+			}
+			current_response = current_response->next;
+		}
+	}
+	
+	scpi_free_responses(head);
+
+	return;
 }
 
 void
@@ -312,6 +469,20 @@ void
 scpi_free_tokens(struct scpi_token* start)
 {
 	scpi_free_some_tokens(start, NULL);
+}
+
+void
+scpi_free_responses(struct scpi_response* start)
+{
+	struct scpi_response* prev;
+	while(start != NULL)
+	{
+		prev = start;
+		start = start->next;
+		
+		free((void*)prev->str);
+		free((void*)prev);
+	}
 }
 
 struct scpi_numeric
@@ -721,8 +892,9 @@ scpi_pop_error(struct scpi_parser_context* ctx)
 		
 		success = (struct scpi_error*)malloc(sizeof(struct scpi_error));
 		success->id = 0;
-		success->description = "No error";
-		success->length = 8;
+		success->description = (char *)malloc(9*sizeof(char));
+		strcpy(success->description, "No error");
+		success->length = 8; // discard the EOS character
 		
 		return success;
 	}

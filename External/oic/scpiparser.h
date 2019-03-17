@@ -1,5 +1,6 @@
 /*
 Copyright (c) 2013 Lachlan Gunn
+Copyright (c) 2019 Sergey Fedorov
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,9 +34,11 @@ SOFTWARE.
 
 typedef enum scpi_error_codes
 {
-	SCPI_SUCCESS			=  0,
-	SCPI_COMMAND_NOT_FOUND	= -1,
-	SCPI_NO_CALLBACK		= -2
+	SCPI_SUCCESS				=  0,
+	SCPI_COMMAND_NOT_FOUND		= -1,
+	SCPI_NO_CALLBACK			= -2,
+	SCPI_CALLBACK_EXEC_ERROR	= -3,
+	SCPI_NO_CALLBACK_RESPONSE	= -4
 } scpi_error_t;
 
 typedef enum scpi_command_location
@@ -44,16 +47,24 @@ typedef enum scpi_command_location
 	SCPI_CL_CHILD
 } scpi_command_location_t;
 
+typedef enum scpi_token_type
+{
+	SCPI_CT_NAME,
+	SCPI_CT_ARG
+} scpi_token_type_t;
+
 struct scpi_token;
 struct scpi_parser_context;
 struct scpi_command;
 struct scpi_error;
+struct scpi_response;
 
-typedef scpi_error_t(*command_callback_t)(struct scpi_parser_context*,struct scpi_token*);
+typedef struct scpi_response*(*command_callback_t)(struct scpi_parser_context*,struct scpi_token*);
+typedef void(*commf_t)(char*, int);
 
 struct scpi_token
 {
-	unsigned char		type;
+	scpi_token_type_t	type;
 	
 	char*				value;
 	size_t				length;
@@ -98,10 +109,19 @@ struct scpi_numeric
 	size_t length;
 };
 
+struct scpi_response
+{
+	char* str;
+	size_t length;
+	scpi_error_t error_code;
+
+	struct scpi_response* next;
+};
+
 /**
- * Initialise an SCPI parser.
+ * Initialize an SCPI parser.
  *
- * @param ctx	A pointer to the struct scpi_parser_context to initialise.
+ * @param ctx	A pointer to the struct scpi_parser_context to initialize.
  */
 void
 scpi_init(struct scpi_parser_context* ctx);
@@ -170,10 +190,9 @@ scpi_register_command(struct scpi_command* parent, scpi_command_location_t locat
 struct scpi_command*
 scpi_find_command(struct scpi_parser_context* ctx,
 					struct scpi_token* parsed_string);
-
 					
 /**
- * Execute an SCPI command string.
+ * Execute a single SCPI command given as string.
  *
  * @param ctx				The SCPI parser context.
  * @param command_string	The command to be executed.
@@ -181,8 +200,32 @@ scpi_find_command(struct scpi_parser_context* ctx,
  *
  * @return An error code.
  */
-scpi_error_t
+struct scpi_response*
 scpi_execute_command(struct scpi_parser_context* ctx, char* command_string, size_t length);
+
+/**
+ * Execute a set of SCPI commands given as string and communicate the responses.
+ *
+ * @param ctx				The SCPI parser context.
+ * @param command_string	String, containing commands separated by ';'.
+ * @param length			The length of the string.
+ * @param commf				Communication function.
+ * @param terminator		Terminator for the response string.
+ *
+ */
+void
+scpi_execute(struct scpi_parser_context* ctx, char* command_string, size_t length, 
+				commf_t commf, char terminator);
+
+/**
+ * Allocate an empty response structure.
+ *
+ * @param length		The length of the allocated response string.
+ *
+ */
+struct scpi_response*
+get_empty_response(int length);
+
 
 /**
  * Free a token list.
@@ -200,6 +243,15 @@ scpi_free_tokens(struct scpi_token* start);
  */
 void
 scpi_free_some_tokens(struct scpi_token* start, struct scpi_token* end);
+
+
+/**
+ * Free a response list.
+ *
+ * @param start	The response list to be freed.
+ */
+void
+scpi_free_responses(struct scpi_response* start);
 
 /**
  * Parse a numeric string.
@@ -247,3 +299,4 @@ scpi_pop_error(struct scpi_parser_context* ctx);
 #endif
 
 #endif
+

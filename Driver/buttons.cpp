@@ -36,6 +36,11 @@ register_button(struct ce_button_list* btn_list, int pin, button_callback_t call
 	new_button->pin = pin;
 	new_button->callback = callback;
 	
+	/* Configure the button pin as input and read its current state*/
+	pinMode(pin, INPUT_PULLUP);
+	new_button->previous_state = digitalRead(pin);
+	new_button->current_state = new_button->previous_state;
+	
 	if(btn_list->head == NULL || btn_list->tail == NULL)
 	{
 		btn_list->head = new_button;
@@ -46,8 +51,6 @@ register_button(struct ce_button_list* btn_list, int pin, button_callback_t call
 		btn_list->tail->next = new_button;
 		btn_list->tail = btn_list->tail->next;
 	}
-	
-	pinMode(pin, INPUT_PULLUP);	
 
 	return new_button;
 }

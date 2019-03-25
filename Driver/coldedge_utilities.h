@@ -63,4 +63,3 @@ void display_pressure(LiquidCrystal_I2C* lcd);
  * Display startup screen
  */
 void display_startup(LiquidCrystal_I2C* lcd);
-

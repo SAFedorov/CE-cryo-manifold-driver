@@ -46,16 +46,22 @@ void setup() {
   pinMode(VALVE7_PIN, OUTPUT);
   pinMode(RECIRC_PIN, OUTPUT);
   pinMode(COOLER_PIN, OUTPUT);
+  pinMode(LED1_PIN,   OUTPUT);
+  pinMode(LED2_PIN,   OUTPUT);
 
-  set_all_off();
+  /* Switch LEDs off */
+  digitalWrite(LED1_PIN, LOW); 
+  digitalWrite(LED2_PIN, LOW);  
 
-  /* Configure buttons */
+  /* Configure buttons*/
   btn_list.head = NULL;
+  
   register_button(&btn_list, 45, &toggle_valve1);       // valve 1 open/close
-  register_button(&btn_list, 49, &toggle_valve23);      // valve 2 and 3 open/close
+  register_button(&btn_list, 49, &toggle_valve2);       // valve 2 and 3 open/close
+  register_button(&btn_list, 48, &toggle_valve3);      // valve 3 open/close
   register_button(&btn_list, 17, &toggle_valve4);       // valve 4 open/close
   register_button(&btn_list, 23, &toggle_valve5);       // valve 5 open/close
-  register_button(&btn_list, 48, &toggle_valve7);       // valve 7 open/close
+  register_button(&btn_list, 16, &toggle_valve7);       // valve 7 open/close
   
   register_button(&btn_list, 47, &toggle_recirculator); // recirculator on/off
   register_button(&btn_list, 46, &toggle_cryocooler);   // cryocooler on/off
@@ -154,8 +160,11 @@ void toggle_valve1(){
   toggle_pin(VALVE1_PIN);
 }
 
-void toggle_valve23(){
+void toggle_valve2(){
   toggle_pin(VALVE2_PIN);
+}
+
+void toggle_valve3(){
   toggle_pin(VALVE3_PIN);
 }
 

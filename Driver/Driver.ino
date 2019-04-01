@@ -1,6 +1,7 @@
 #include <Arduino.h>
-#include <scpiparser.h>
+#include <scpiparser.h>       // a forked version of Open Instrument Control
 #include <LiquidCrystal_I2C.h> // newliquidcrystal 
+
 #include "buttons.h"
 #include "coldedge_utilities.h"
 #include "scpi_callbacks.h"
